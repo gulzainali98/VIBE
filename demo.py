@@ -146,7 +146,7 @@ def main(args):
 
         with torch.no_grad():
 
-            pred_cam, pred_verts, pred_pose, pred_betas, pred_joints3d, norm_joints2d = [], [], [], [], [], []
+            pred_cam, pred_verts, pred_pose, pred_betas, pred_joints3d, norm_joints2d, pred_global_orient = [], [], [], [], [], [], []
 
             for batch in dataloader:
                 if has_keypoints:
@@ -164,12 +164,14 @@ def main(args):
                 pred_pose.append(output['theta'][:,:,3:75].reshape(batch_size * seqlen, -1))
                 pred_betas.append(output['theta'][:, :,75:].reshape(batch_size * seqlen, -1))
                 pred_joints3d.append(output['kp_3d'].reshape(batch_size * seqlen, -1, 3))
+                pred_global_orient.append(output['global_orient'].reshape(batch_size*seqlen,-1))
 
 
             pred_cam = torch.cat(pred_cam, dim=0)
             pred_verts = torch.cat(pred_verts, dim=0)
             pred_pose = torch.cat(pred_pose, dim=0)
             pred_betas = torch.cat(pred_betas, dim=0)
+            pred_global_orient= torch.cat(pred_global_orient,dim=0)
             pred_joints3d = torch.cat(pred_joints3d, dim=0)
 
             del batch
@@ -181,8 +183,9 @@ def main(args):
             norm_joints2d = torch.from_numpy(norm_joints2d).float().to(device)
 
             # Run Temporal SMPLify
+            # note to self here you will add an extra variable for global orientation after you have made changes in temporal_simplify.py, demo_utils.py and smpl.py
             update, new_opt_vertices, new_opt_cam, new_opt_pose, new_opt_betas, \
-            new_opt_joints3d, new_opt_joint_loss, opt_joint_loss = smplify_runner(
+            new_opt_joints3d, new_opt_joint_loss, opt_joint_loss, new_global_orient = smplify_runner(
                 pred_rotmat=pred_pose,
                 pred_betas=pred_betas,
                 pred_cam=pred_cam,
@@ -199,11 +202,14 @@ def main(args):
             pred_pose = pred_pose.cpu()
             pred_betas = pred_betas.cpu()
             pred_joints3d = pred_joints3d.cpu()
+            new_global_orient== new_global_orient.cpu()
             pred_verts[update] = new_opt_vertices[update]
             pred_cam[update] = new_opt_cam[update]
             pred_pose[update] = new_opt_pose[update]
             pred_betas[update] = new_opt_betas[update]
             pred_joints3d[update] = new_opt_joints3d[update]
+            pred_global_orient[update]= new_global_orient[update]
+
 
         elif args.run_smplify and args.tracking_method == 'bbox':
             print('[WARNING] You need to enable pose tracking to run Temporal SMPLify algorithm!')
@@ -222,9 +228,10 @@ def main(args):
             img_width=orig_width,
             img_height=orig_height
         )
-
+# note to self here you will finally add global orient option in the output_dict.
         output_dict = {
             'pred_cam': pred_cam,
+            'global_orient': pred_global_orient,
             'orig_cam': orig_cam,
             'verts': pred_verts,
             'pose': pred_pose,

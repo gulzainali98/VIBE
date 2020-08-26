@@ -185,7 +185,7 @@ class TemporalSMPLify():
             betas_ext = arrange_betas(body_pose, betas)
             smpl_output = self.smpl(global_orient=global_orient,
                                     body_pose=body_pose,
-                                    betas=betas_ext)
+                                    betas=betas_ext, return_full_pose=True)
             model_joints = smpl_output.joints
             reprojection_loss = temporal_body_fitting_loss(body_pose, betas, model_joints, camera_translation,
                                                            camera_center,
@@ -195,6 +195,7 @@ class TemporalSMPLify():
 
         vertices = smpl_output.vertices.detach()
         joints = smpl_output.joints.detach()
+        global_orient= smpl_output.global_orient.detach()
         pose = torch.cat([global_orient, body_pose], dim=-1).detach()
         betas = betas.detach()
 
@@ -207,6 +208,7 @@ class TemporalSMPLify():
         betas = betas.repeat(pose.shape[0],1)
         output = {
             'theta': torch.cat([camera_translation, pose, betas], dim=1),
+            'global_orient': global_orient,
             'verts': vertices,
             'kp_3d': joints,
         }

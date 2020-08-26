@@ -100,6 +100,8 @@ def smplify_runner(
         use_lbfgs=True,
         pose2aa=True
 ):
+    # notes to self
+    # here look into how this is being used and then return global orientation
     smplify = TemporalSMPLify(
         step_size=lr,
         batch_size=batch_size,
@@ -146,6 +148,8 @@ def smplify_runner(
         0.5 * 224 * torch.ones(batch_size, 2, device=device),
         gt_keypoints_2d_orig,
     )
+    # notes to self
+    # once you have made required changes in smpl. You will get global orientation in output field.
     new_opt_joint_loss = new_opt_joint_loss.mean(dim=-1)
     # smplify_time = time.time() - start
     # print(f'Smplify time: {smplify_time}')
@@ -157,11 +161,13 @@ def smplify_runner(
     new_opt_pose = output['theta'][:,3:75]
     new_opt_betas = output['theta'][:,75:]
     new_opt_joints3d = output['kp_3d']
-
+    new_global_orient= output['global_orient']
+    # notes to self
+    # here now you will return global orientation
     return_val = [
         update, new_opt_vertices.cpu(), new_opt_cam_t.cpu(),
         new_opt_pose.cpu(), new_opt_betas.cpu(), new_opt_joints3d.cpu(),
-        new_opt_joint_loss, opt_joint_loss,
+        new_opt_joint_loss, opt_joint_loss,new_global_orient.cpu()
     ]
 
     return return_val

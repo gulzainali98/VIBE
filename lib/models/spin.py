@@ -273,18 +273,25 @@ class Regressor(nn.Module):
 
         pred_vertices = pred_output.vertices
         pred_joints = pred_output.joints
-
+        pred_global_orient= pred_output.global_orient
+        # print(pred_joints)
+        # print(pred_output.body_pose.shape)
+        # klskldj()
         if J_regressor is not None:
             J_regressor_batch = J_regressor[None, :].expand(pred_vertices.shape[0], -1, -1).to(pred_vertices.device)
             pred_joints = torch.matmul(J_regressor_batch, pred_vertices)
             pred_joints = pred_joints[:, H36M_TO_J14, :]
 
-        pred_keypoints_2d = projection(pred_joints, pred_cam)
+        pred_keypoints_2d = projection(pred_joints, pred_cam)\
+
+
+        print(pred_rotmat.shape)
 
         pose = rotation_matrix_to_angle_axis(pred_rotmat.reshape(-1, 3, 3)).reshape(-1, 72)
-
+    # my-change
         output = [{
             'theta'  : torch.cat([pred_cam, pose, pred_shape], dim=1),
+            'global_orient' : pred_global_orient,
             'verts'  : pred_vertices,
             'kp_2d'  : pred_keypoints_2d,
             'kp_3d'  : pred_joints,
