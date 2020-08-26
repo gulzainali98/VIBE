@@ -20,7 +20,7 @@ from yacs.config import CfgNode as CN
 # CONSTANTS
 # You may modify them at will
 # VIBE_DB_DIR = 'data/vibe_db'
-VIBE_DB_DIR = './data/data-2136/vibe-db/'
+VIBE_DB_DIR = './data/vibe-db/'
 AMASS_DIR = 'data/amass'
 INSTA_DIR = 'data/insta_variety'
 MPII3D_DIR = 'data/mpi_inf_3dhp'
